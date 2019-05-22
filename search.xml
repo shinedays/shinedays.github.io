@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title><![CDATA[Improving_Deep_Netural_Networks_Note3]]></title>
+    <url>%2F2019%2F05%2F23%2FImproving-Deep-Netural-Networks-Note3%2F</url>
+    <content type="text"><![CDATA[NG的公开课改善深层神经网络：超参数调试、正则化以及优化的第三周内容，主要讲解的有：超参数的调整，batch norm，softmax和常见的框架（TensorFlow）。下面分别具体介绍下各部分内容。课程地址 第一讲 调试处理主要介绍了超参数重要性和系统调整超参数的一些方法。首先是常见的超参数 1234567α 学习率，最为重要β momentum 第二 0.9β1，β2，ε Adam,不重要 0.9 0.999 10^-8layers 第三hidden units 第二learning rate decay 第三mini-batch size 第二 如何调试超参数值1、传统机器学习经常使用网格，在参数较少时效果尚可。深度学习中则随机选择点，试验超参数的记过，这是由于在实际场景中很难预先知道哪些超参数影响更高，同时超参数数量更多，随机选择可以探究更多重要超参数的潜在数值。2、使用由粗到精的策略。当你发现有些区域的取值更优时，应当放大这块区域，更为密集地取值。聚焦于可能出现最优值得区域。 第二讲 为超参数选择合适的范围对于一些超参数，可以在数轴上进行均匀/随机的取值，例如layers。对于另一些超参数不适用。例如学习率，假设取值范围为0.0001到1，如果在数轴上均匀取值，那么对较小的范围如0.00001到0.1的搜索只会占10%的资源，这并不合理，此时应当使用对数轴而不是数轴。 123例如Python就可以这样写r = -4 *np.random.rand()α = 10^r 对于第三类，例如指数加权的β，例如取值范围为0.9到0.999，由于β的性质，在越接近1的地方越灵敏，因此同样不适用于线性轴，因此我们使用1-β来将其转化为可以使用对数轴。 第三讲 超参数训练的实践Panda vs Caviar对于深度学习，各个领域间可以有互相的启发每隔数月调整一次超参数对于model的管理：两大流派，一类为数据集较大但是计算资源不足，需要每天观察，对模型进行逐步的参数调整，称为panda；另一类则是同时运行多个模型，具有不同的超参数甚至模型本身就不同，最后选择工作较好的那个，称为caviar。这是由计算资源决定的，对于计算机视觉/广告在线等业务，难以同时试验，则适用于panda。资源较多时，caviar更为快捷。 第四讲 正则化网络的激活函数本节是四小节讲解batch norm的第一节。对于回归模型等，有归一化输入特征，这有助于加速训练。 类比我们可以想到，对于每一层的输入a[l-1],我们在训练参数w[l],b[l]时，可以归一化输入，使其训练更为快速，这就是batch norm的直观解释。对于归一化z还是a，学术界有一定的diff，实践中主要归一化z，这也是ng的推荐。BN的实现则如图所示，对于l层的m个z值，记为z[1]到z[m]，有通过对γ和β的合理设置，可以构造含有不同均值和方差的分布。这是两个新的参数。BN不仅是对输入值，还可以对隐藏层的中间输入z进行归一化，同时可以调整分布，在使用一些激活函数如sigmod时，避免均值0方差1的分布，这样可以不只使用线性部分。总而言之，BN的意义在于使z[i]具有了相同的均值和方差。 第五讲 将BN拟合进神经网络本节是四小节讲解batch norm的第二节。首先看一看如何将BN拟合进网络在实际训练中，BN常与mini-batch共同使用，如图注意，由于BN的计算方式，可以知道b这个参数是没有用处的，因为加上的参数会由于减去均值而被抵消掉，所以实际的参数只有w，γ，β。最后是维数，n[l]是l层隐藏单元的数量，那么γ[l]和β[l]都是(n[l],1),用于将每个隐藏层的均值和方差进行缩放。含有BN的梯度下降实现如图： 第六讲 BN为什么奏效本节是四小节讲解batch norm的第三节。首先直观的一点是归一化输入值可以加速学习，这是先前已经被证明的。第二点是解决covariate shift。简单点来说,由于实际的情况下训练集的分布产生了改变，这会影响模型的准确性，这就是covariate shift。深度学习而言，对于其中任意一个隐藏层，其输入是上一层的输出，当上一层的参数改变时，对应会改变输出，从而使隐藏层的输入产生covariate shift。通过BN可以保证输入的均值和方差不变，减少了输入值改变的问题，使输入更为稳定。这会稍微减弱上下层间参数的联系，使参数更为独立。第三点是BN由轻微的正则化效果。由于mini-batch上计算的数值会有噪声，因此缩放的计算也有噪声，类似于dropout，会有轻微的正则化效果，是后续单元不过分依赖前项。不过并不是强大的正则化效果。同时，当mini-batch的size较大时会减少正则化的效果。 第七讲 测试时的BN本节是四小节讲解batch norm的第四节。BN的计算如图所示：对于每个mini-batch，可以分别计算每个batch的μ值，之后使用指数加权平均来追踪值。σ2也类似。最后使用这两个指数加权平均来计算z来进行调整。 第八讲 softmax回归对于多分类问题，可以建立一个分类数的输出层，希望通过输出来表示每种分类的概率大小。这需要softmax层和输出层来产生输出。计算流程：在正常计算出Z[L]后，需要进行softmax计算：与其他激活函数不同，softmax函数的输入输出都是向量而不是实数。下面是对于一个只有一层的网络，softmax的例子演示： 第九讲 训练一个softmax分类器softmax分类器会将logistic推广到C类。如何训练带有softmax的网络。对于训练来说，损失函数需要找到训练集的真实类别，并使其尽可能的输出最大。梯度下降 后面两讲主要是关于框架和TensorFlow的使用。 更多阅读：贝叶斯角度浅析BNlogistic与softmaxsoftmax，softmax-loss，BP的解释]]></content>
+      <categories>
+        <category>deep learning</category>
+      </categories>
+      <tags>
+        <tag>deep learning</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[Hello World]]></title>
+    <url>%2F2019%2F05%2F23%2Fhello-world%2F</url>
+    <content type="text"><![CDATA[Hexo文档Next文档eirunye的blog查看上面的文档，基本可以解决新手搭建中的各种问题~]]></content>
+      <categories>
+        <category>hexo</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[git_usage]]></title>
+    <url>%2F2019%2F05%2F23%2Fgit-usage%2F</url>
+    <content type="text"><![CDATA[git是常用的代码管理工具，详细的教程可以查看廖雪峰的git教程。在这里主要记录一些常用命令和多人协作的流程 git提交代码的基本流程git作为一个强大的版本管理工具，已经被广泛的应用在了公司的代码管理中。对于一个新手而言，基本的代码开发流程应该按照以下的顺序。 从公共的git仓库fork代码到自己的仓库公司的公共仓库是正式上线的代码地址，一般来说不应该也没有权限去直接提交到公共仓库的主分支上。因此，代码开发的第一步就是fork代码到自己的仓库中，这样对自己代码的修改不会影响到主分支，同时也便于其他人review你的代码。在自己的仓库中，要注意配置自动更新和ssh，便于后续上传代码，管控代码的提交工具。 创建自己的分支每次任务最好都创建一个独立的分支，这样便于修改和调整，更加的规范和合理。创建分支采用checkout命令： 1git checkout -b/gco -b 新分支 复制的分支 任务提交到远程分支任务的提交流程就比较常见了。命令如下： 123git add *git commit -m &quot;描述&quot;git push -u 主机 本地分支：远程分支 其中push可以有多种写法，-u指定了推送的远程主机，一般来说可以不用。简单的git push可能就能应对大部分情况。 代码冲突解决在协作中经常会发现自己的代码不是基于最新的代码进行修改的，这就需要解决代码的冲突问题。一般而言，在分工明确的情况下，两个人的代码一般不会有很严重的交集，但是仍然需要解决代码一致的问题。这时候的基本流程就是： 12345gco mastergit pull gco 项目分支git merge mastergit status 查看差异并修改 当然，还可以用git rebase 去修改合并。 commit合并如果你对同一个任务进行了多次提交，会产生多个commit，一般而言这些工作开发流程不应该被合并到主分支上。因此需要合并commit。简单的方式是在你push后没进行过其他操作，此时可以简单的使用 123git add *git commit --amendgit push -f 来解决。但是如果你做了其他无法–amend的操作，这就需要使用git rebase 123git log 检查commit列表git rebase -i commitid r重写commit信息 f合并 d丢弃git push -f 如果出现问题，则使用git rebase –abort，可以回到rebase前的状态。 git其他常用命令1git checkout origin/master -- path/to/file 可以用于更新路径下的文件]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+</search>
